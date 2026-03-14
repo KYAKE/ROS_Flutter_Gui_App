@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flame/game.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
@@ -66,6 +68,7 @@ class MainFlame extends FlameGame {
   // 手势相关变量
   double _baseScale = 1.0;
   Vector2? _lastFocalPoint;
+  bool _hasFittedMapViewport = false;
 
   bool isRelocMode = false;
   RobotPose relocRobotPose = RobotPose(0, 0, 0);
@@ -165,6 +168,14 @@ class MainFlame extends FlameGame {
 
     // 根据初始图层状态添加组件
     _initializeLayerComponents();
+  }
+
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    if (!isLoaded) return;
+    _updateGridBounds();
+    _fitMapToViewport();
   }
 
   RobotPose getRelocRobotPose() {
@@ -274,9 +285,7 @@ class MainFlame extends FlameGame {
     });
 
     // 监听地图数据
-    rosChannel!.map_.addListener(() {
-      _displayMap.updateMapData(rosChannel!.map_.value);
-    });
+    rosChannel!.map_.addListener(_handleMapChanged);
 
     // 监听拓扑地图数据
     rosChannel!.topologyMap_.addListener(() {
@@ -284,12 +293,47 @@ class MainFlame extends FlameGame {
     });
 
     // 立即更新地图数据
-    _displayMap.updateMapData(rosChannel!.map_.value);
+    _handleMapChanged();
 
     _loadOfflineNavPoints();
 
     // 立即更新拓扑图层数据
     _updateTopologyLayers();
+  }
+
+  void _handleMapChanged() {
+    final map = rosChannel!.map_.value;
+    _displayMap.updateMapData(map);
+    _updateGridBounds();
+    _fitMapToViewport();
+  }
+
+  void _fitMapToViewport({bool force = false}) {
+    final map = rosChannel!.map_.value;
+    if (map.mapConfig.width <= 0 || map.mapConfig.height <= 0) return;
+    if (!force && _hasFittedMapViewport) return;
+    if (size.x <= 0 || size.y <= 0) return;
+
+    final zoomX = size.x / map.mapConfig.width;
+    final zoomY = size.y / map.mapConfig.height;
+    final fitZoom = (math.min(zoomX, zoomY) * 0.9).clamp(minScale, maxScale);
+
+    camera.viewfinder.position = Vector2(
+      _displayMap.position.x + map.mapConfig.width / 2,
+      _displayMap.position.y + map.mapConfig.height / 2,
+    );
+    camera.viewfinder.zoom = fitZoom;
+    mapScale = fitZoom;
+    _hasFittedMapViewport = true;
+  }
+
+  void _updateGridBounds() {
+    final map = rosChannel!.map_.value;
+    final gridWidth = math.max(size.x, map.mapConfig.width.toDouble());
+    final gridHeight = math.max(size.y, map.mapConfig.height.toDouble());
+    _displayGrid
+      ..size = Vector2(gridWidth, gridHeight)
+      ..position = Vector2.zero();
   }
 
   // 处理缩放开始
@@ -313,6 +357,7 @@ class MainFlame extends FlameGame {
     camera.viewfinder.position -= focalPointDelta / camera.viewfinder.zoom;
 
     _lastFocalPoint = position;
+    _hasFittedMapViewport = true;
     return true;
   }
 
@@ -341,6 +386,7 @@ class MainFlame extends FlameGame {
     final offset = position - newScreenPoint;
     camera.viewfinder.position -= offset / camera.viewfinder.zoom;
 
+    _hasFittedMapViewport = true;
     return true;
   }
 
@@ -357,11 +403,13 @@ class MainFlame extends FlameGame {
   void zoomIn() {
     mapScale = (mapScale * 1.2).clamp(minScale, maxScale);
     camera.viewfinder.zoom = mapScale;
+    _hasFittedMapViewport = true;
   }
 
   void zoomOut() {
     mapScale = (mapScale / 1.2).clamp(minScale, maxScale);
     camera.viewfinder.zoom = mapScale;
+    _hasFittedMapViewport = true;
   }
 
   // 简化实现，只保留基本的点击效果

@@ -17,7 +17,7 @@ class GridCellChange {
   final int col;
   final int oldValue;
   final int newValue;
-  
+
   GridCellChange({
     required this.row,
     required this.col,
@@ -30,39 +30,33 @@ class MapComponent extends SpriteComponent {
   OccupancyMap? _currentMap;
   RosChannel? _rosChannel;
   bool _isDarkMode = false;
-  
+
   Uint8List? _pixelBuffer;
   int _bufferWidth = 0;
   int _bufferHeight = 0;
-  
+
   // 公开访问当前地图数据
   OccupancyMap? get currentMap => _currentMap;
-  
+
   // 构造函数接收RosChannel
   MapComponent({RosChannel? rosChannel}) {
     _rosChannel = rosChannel;
   }
-  
+
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    
-    // Only use a placeholder before the first real map image is built.
-    if (sprite == null) {
-      final placeholderImage = await _createPlaceholderImage();
-      sprite = Sprite(placeholderImage);
-    }
-    
+
+    // 创建一个占位的透明 sprite，避免 SpriteComponent 断言失败
+    final placeholderImage = await _createPlaceholderImage();
+    sprite = Sprite(placeholderImage);
+
     // 如果有RosChannel，立即设置监听器
     if (_rosChannel != null) {
       _setupMapListener();
     }
-
-    if (_currentMap != null) {
-      await _processMapToSprite(_currentMap!);
-    }
   }
-  
+
   // 创建一个 1x1 像素的透明占位图像
   Future<ui.Image> _createPlaceholderImage() async {
     final recorder = ui.PictureRecorder();
@@ -72,35 +66,35 @@ class MapComponent extends SpriteComponent {
     final picture = recorder.endRecording();
     return await picture.toImage(1, 1);
   }
-  
+
   void _setupMapListener() {
     if (_rosChannel != null) {
       // 监听地图数据变化
       _rosChannel!.map_.addListener(_onMapDataChanged);
-      
+
       // 立即更新当前地图数据
       _onMapDataChanged();
     }
   }
-  
+
   void _onMapDataChanged() {
     if (_rosChannel != null) {
       final newMap = _rosChannel!.map_.value;
       updateMapData(newMap);
     }
   }
-  
+
   OccupancyMap? getMapData() {
     return _currentMap;
   }
-  
+
   void updateMapData(OccupancyMap map) async {
-    if (_currentMap == map && sprite != null) return;
-    
+    if (_currentMap == map) return;
+
     _currentMap = map;
     await _processMapToSprite(map);
   }
-  
+
   void updateThemeMode(bool isDarkMode) {
     _isDarkMode = isDarkMode;
     // 重新渲染地图以应用新的主题
@@ -108,57 +102,64 @@ class MapComponent extends SpriteComponent {
       _processMapToSprite(_currentMap!);
     }
   }
-  
+
   // 返回变化列表，用于撤销
-  List<GridCellChange> modifyCells(List<MapEntry<int, int>> cells, int value, {Map<String, int>? initialValues}) {
+  List<GridCellChange> modifyCells(List<MapEntry<int, int>> cells, int value,
+      {Map<String, int>? initialValues}) {
     if (_currentMap == null || _pixelBuffer == null) {
       return [];
     }
-    
+
     final List<GridCellChange> changes = [];
-    
+
     for (var cell in cells) {
       final row = cell.key;
       final col = cell.value;
-      if (row >= 0 && row < _currentMap!.Rows() && col >= 0 && col < _currentMap!.Cols()) {
+      if (row >= 0 &&
+          row < _currentMap!.Rows() &&
+          col >= 0 &&
+          col < _currentMap!.Cols()) {
         final key = '$row,$col';
         // 如果 initialValues 中有这个单元格，使用它作为原始值，否则使用当前值
-        final oldValue = initialValues?.containsKey(key) == true 
-            ? initialValues![key]! 
+        final oldValue = initialValues?.containsKey(key) == true
+            ? initialValues![key]!
             : _currentMap!.data[row][col];
-        
-        changes.add(GridCellChange(row: row, col: col, oldValue: oldValue, newValue: value));
+
+        changes.add(GridCellChange(
+            row: row, col: col, oldValue: oldValue, newValue: value));
         _currentMap!.data[row][col] = value;
         _updatePixel(row, col, value);
       }
     }
-    
+
     _rebuildSpriteFromBuffer();
     return changes;
   }
-  
+
   // 应用变化（用于撤销/重做）
   void applyChanges(List<GridCellChange> changes, bool useNewValue) {
     if (_currentMap == null || _pixelBuffer == null) return;
-    
+
     for (var change in changes) {
       final value = useNewValue ? change.newValue : change.oldValue;
-      if (change.row >= 0 && change.row < _currentMap!.Rows() && 
-          change.col >= 0 && change.col < _currentMap!.Cols()) {
+      if (change.row >= 0 &&
+          change.row < _currentMap!.Rows() &&
+          change.col >= 0 &&
+          change.col < _currentMap!.Cols()) {
         _currentMap!.data[change.row][change.col] = value;
         _updatePixel(change.row, change.col, value);
       }
     }
-    
+
     _rebuildSpriteFromBuffer();
   }
-  
+
   void _updatePixel(int row, int col, int mapValue) {
     if (_pixelBuffer == null) return;
-    
+
     final int pixelIndex = (row * _bufferWidth + col) * 4;
     if (pixelIndex + 3 >= _pixelBuffer!.length) return;
-    
+
     if (mapValue > 0) {
       int alpha = (mapValue * 2.55).clamp(0, 255).toInt();
       if (_isDarkMode) {
@@ -198,12 +199,13 @@ class MapComponent extends SpriteComponent {
       }
     }
   }
-  
+
   Future<void> _rebuildSpriteFromBuffer() async {
     if (_pixelBuffer == null || _bufferWidth == 0 || _bufferHeight == 0) return;
-    
+
     try {
-      final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(_pixelBuffer!);
+      final ui.ImmutableBuffer buffer =
+          await ui.ImmutableBuffer.fromUint8List(_pixelBuffer!);
       final ui.ImageDescriptor descriptor = ui.ImageDescriptor.raw(
         buffer,
         width: _bufferWidth,
@@ -213,20 +215,22 @@ class MapComponent extends SpriteComponent {
       final ui.Codec codec = await descriptor.instantiateCodec();
       final ui.FrameInfo frameInfo = await codec.getNextFrame();
       final ui.Image image = frameInfo.image;
-      
+
       buffer.dispose();
       descriptor.dispose();
       codec.dispose();
-      
+
       sprite = Sprite(image);
     } catch (e) {
       print('Error rebuilding sprite: $e');
     }
   }
-  
+
   Future<void> _processMapToSprite(OccupancyMap map) async {
     try {
-      if (map.data.isEmpty || map.mapConfig.width == 0 || map.mapConfig.height == 0) {
+      if (map.data.isEmpty ||
+          map.mapConfig.width == 0 ||
+          map.mapConfig.height == 0) {
         sprite = null;
         _pixelBuffer = null;
         return;
@@ -235,20 +239,23 @@ class MapComponent extends SpriteComponent {
       final int width = map.mapConfig.width;
       final int height = map.mapConfig.height;
 
-      if (_pixelBuffer == null || _bufferWidth != width || _bufferHeight != height) {
+      if (_pixelBuffer == null ||
+          _bufferWidth != width ||
+          _bufferHeight != height) {
         _pixelBuffer = Uint8List(width * height * 4);
         _bufferWidth = width;
         _bufferHeight = height;
       }
-      
+
       for (int i = 0; i < map.Cols(); i++) {
         for (int j = 0; j < map.Rows(); j++) {
           int mapValue = map.data[j][i];
           _updatePixel(j, i, mapValue);
         }
       }
-      
-      final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(_pixelBuffer!);
+
+      final ui.ImmutableBuffer buffer =
+          await ui.ImmutableBuffer.fromUint8List(_pixelBuffer!);
       final ui.ImageDescriptor descriptor = ui.ImageDescriptor.raw(
         buffer,
         width: width,
@@ -258,29 +265,27 @@ class MapComponent extends SpriteComponent {
       final ui.Codec codec = await descriptor.instantiateCodec();
       final ui.FrameInfo frameInfo = await codec.getNextFrame();
       final ui.Image image = frameInfo.image;
-      
+
       buffer.dispose();
       descriptor.dispose();
       codec.dispose();
-      
+
       sprite = Sprite(image);
       size = Vector2(width.toDouble(), height.toDouble());
-      // The Flame world uses occupancy-grid indices as coordinates.
-      // Keeping the map at the origin keeps all overlays aligned.
+      // Flame 场景统一使用栅格索引坐标；地图原点偏移已经在 xy2idx/idx2xy 中处理。
       position = Vector2.zero();
-      
     } catch (e) {
       print('Error processing map in Flame: $e');
-    } 
+    }
   }
-  
+
   @override
   void onRemove() {
     // 移除监听器
     if (_rosChannel != null) {
       _rosChannel!.map_.removeListener(_onMapDataChanged);
     }
-    
+
     super.onRemove();
   }
 }
