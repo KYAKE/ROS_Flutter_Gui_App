@@ -9,11 +9,13 @@ class PointCloudComponent extends Component {
   List<Point3D> pointList = [];
   OccupancyMap map;
   List<vm.Vector2> _transformedPoints = [];
-  
-  PointCloudComponent({
-    required this.pointList, 
-    required this.map
-  });
+
+  PointCloudComponent({required this.pointList, required this.map});
+
+  void updateMap(OccupancyMap newMap) {
+    map = newMap;
+    _transformPoints();
+  }
 
   void updatePoints(List<Point3D> newPoints) {
     pointList = newPoints;
@@ -22,12 +24,13 @@ class PointCloudComponent extends Component {
 
   void _transformPoints() {
     _transformedPoints.clear();
-    
+
+    if (map.mapConfig.resolution <= 0 || map.mapConfig.height <= 0) return;
     if (pointList.isEmpty) return;
 
     for (Point3D point in pointList) {
       vm.Vector2 mapPoint = map.xy2idx(vm.Vector2(point.x, point.y));
-      
+
       if (mapPoint.x.isFinite && mapPoint.y.isFinite) {
         _transformedPoints.add(vm.Vector2(mapPoint.x, mapPoint.y));
       }
@@ -51,9 +54,8 @@ class PointCloudComponent extends Component {
       ..strokeCap = StrokeCap.round
       ..strokeWidth = 1;
 
-    List<Offset> offsetPoints = _transformedPoints
-        .map((v) => Offset(v.x, v.y))
-        .toList();
+    List<Offset> offsetPoints =
+        _transformedPoints.map((v) => Offset(v.x, v.y)).toList();
 
     canvas.drawPoints(PointMode.points, offsetPoints, paint);
   }

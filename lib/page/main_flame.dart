@@ -304,6 +304,7 @@ class MainFlame extends FlameGame {
   void _handleMapChanged() {
     final map = rosChannel!.map_.value;
     _displayMap.updateMapData(map);
+    _pointCloudComponent.updateMap(map);
     _updateGridBounds();
     _fitMapToViewport();
   }
