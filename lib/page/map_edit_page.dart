@@ -413,6 +413,15 @@ class _MapEditPageState extends State<MapEditPage> {
             ),
             const Spacer(),
             IconButton(
+              icon: const Icon(
+                Icons.settings_ethernet,
+                color: Colors.white,
+                size: 22,
+              ),
+              onPressed: _goToConnectPage,
+              tooltip: '返回连接页',
+            ),
+            IconButton(
               icon: const Icon(Icons.close, color: Colors.white, size: 24),
               onPressed: () async {
                 final mapManager = rosChannel.mapManager;
@@ -545,18 +554,33 @@ class _MapEditPageState extends State<MapEditPage> {
               alignment: Alignment.centerRight,
               child: Padding(
                 padding: const EdgeInsets.only(right: 20),
-                child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white, size: 28),
-                  onPressed: () async {
-                    final mapManager = rosChannel.mapManager;
-                    List<NavPoint> navPoints = game.getAllWayPoint();
-                    mapManager.setNavPoints(navPoints);
-                    await mapManager.saveLocalTopologyMap();
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.settings_ethernet,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                      onPressed: _goToConnectPage,
+                      tooltip: '返回连接页',
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 28),
+                      onPressed: () async {
+                        final mapManager = rosChannel.mapManager;
+                        List<NavPoint> navPoints = game.getAllWayPoint();
+                        mapManager.setNavPoints(navPoints);
+                        await mapManager.saveLocalTopologyMap();
 
-                    widget.onExit?.call();
-                    Navigator.pop(context);
-                  },
-                  tooltip: '退出地图编辑模式',
+                        widget.onExit?.call();
+                        Navigator.pop(context);
+                      },
+                      tooltip: '退出地图编辑模式',
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -1231,5 +1255,20 @@ class _MapEditPageState extends State<MapEditPage> {
   // 按钮点击处理
   void _onAddRobotPositionButtonPressed() async {
     await game.addNavPointAtRobotPosition();
+  }
+
+  Future<void> _goToConnectPage() async {
+    try {
+      final mapManager = rosChannel.mapManager;
+      mapManager.setNavPoints(game.getAllWayPoint());
+      await mapManager.saveLocalTopologyMap();
+    } catch (e) {
+      debugPrint('返回连接页前保存地图编辑数据失败: $e');
+    }
+
+    rosChannel.closeConnection();
+    if (!mounted) return;
+    widget.onExit?.call();
+    Navigator.pushNamedAndRemoveUntil(context, "/connect", (route) => false);
   }
 }

@@ -142,6 +142,13 @@ class _MainFlamePageState extends State<MainFlamePage> {
     );
   }
 
+  void _goToConnectPage() {
+    Provider.of<RosChannel>(context, listen: false).closeConnection();
+    Provider.of<GlobalState>(context, listen: false).mode.value = Mode.normal;
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(context, "/connect", (route) => false);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -885,6 +892,21 @@ class _MainFlamePageState extends State<MainFlamePage> {
                       setState(() {});
                     },
                     tooltip: '地图编辑',
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // 返回连接页按钮
+                Card(
+                  elevation: 10,
+                  child: IconButton(
+                    onPressed: _goToConnectPage,
+                    icon: Icon(
+                      Icons.settings_ethernet,
+                      color: theme.iconTheme.color,
+                    ),
+                    tooltip: '返回连接页',
                   ),
                 ),
 
