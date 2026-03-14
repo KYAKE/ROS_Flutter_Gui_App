@@ -268,16 +268,21 @@ class RosChannel {
     }
   }
 
+  Map<String, dynamic> _buildRosTimestamp() {
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    return {
+      "secs": nowMs ~/ 1000,
+      "nsecs": (nowMs % 1000) * 1000000,
+    };
+  }
+
   Future<void> sendNavigationGoal(RobotPose pose) async {
     vm.Quaternion quaternion = eulerToQuaternion(pose.theta, 0, 0);
     Map<String, dynamic> msg = {
       "header": {
         // "seq": 0,
-        "stamp": {
-          "secs": DateTime.now().second,
-          "nsecs": DateTime.now().millisecond * 1000000
-        },
-        "frame_id": "map"
+        "stamp": _buildRosTimestamp(),
+        "frame_id": globalSetting.mapFrameName
       },
       "pose": {
         "position": {"x": pose.x, "y": pose.y, "z": 0},
@@ -364,11 +369,8 @@ class RosChannel {
     Map<String, dynamic> msg = {
       "header": {
         // "seq": 0,
-        "stamp": {
-          "secs": DateTime.now().second,
-          "nsecs": DateTime.now().millisecond * 1000000
-        },
-        "frame_id": "map"
+        "stamp": _buildRosTimestamp(),
+        "frame_id": globalSetting.mapFrameName
       },
       "pose": {
         "pose": {

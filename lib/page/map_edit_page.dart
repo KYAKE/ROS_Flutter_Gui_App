@@ -103,6 +103,10 @@ class _MapEditPageState extends State<MapEditPage> {
     
     // 加载导航点
     _loadNavPoints();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      game.focusEntireMap();
+    });
   }
   
   @override
@@ -568,6 +572,10 @@ class _MapEditPageState extends State<MapEditPage> {
         } else {
           selectedTool = toolName; // 选择工具
           game.setSelectedTool(toolName);
+          if (toolName == EditToolType.addNavPoint ||
+              toolName == EditToolType.addRoute) {
+            game.focusEntireMap();
+          }
           // 切换到其他工具时退出所有点位编辑模式
           if (toolName != EditToolType.addNavPoint) {
             for (final wp in game.wayPoints) {

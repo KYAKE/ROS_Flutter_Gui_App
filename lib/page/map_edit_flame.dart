@@ -65,6 +65,7 @@ class MapEditFlame extends FlameGame {
   // 手势相关变量
   double _baseScale = 1.0;
   Vector2? _lastFocalPoint;
+  bool _hasFittedMapViewport = false;
   
   // 障碍物编辑相关
   CommandManager commandManager = CommandManager();
@@ -214,21 +215,78 @@ class MapEditFlame extends FlameGame {
     // 初始化拓扑图层
     _updateTopologyLayers();
   }
+
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    if (!isLoaded) return;
+    _updateGridBounds();
+    _fitMapToViewport();
+  }
   
   void _setupRosListeners() {
     if (rosChannel != null) {
-      
       rosChannel!.robotPoseMap.addListener(() {
         currentRobotPose = rosChannel!.robotPoseMap.value;
       });
       
-          // 监听拓扑地图数据
+      rosChannel!.map_.addListener(_handleMapChanged);
+
+      // 监听拓扑地图数据
       rosChannel!.topologyMap_.addListener(() {
         _updateTopologyLayers();
       });
+
       // 立即更新地图数据
-      _displayMap.updateMapData(rosChannel!.map_.value);
+      _handleMapChanged();
     }
+  }
+
+  void _handleMapChanged() {
+    if (rosChannel == null) return;
+    final map = rosChannel!.map_.value;
+    _displayMap.updateMapData(map);
+    _updateGridBounds();
+    _fitMapToViewport();
+  }
+
+  void focusEntireMap() {
+    _fitMapToViewport(force: true);
+  }
+
+  void _fitMapToViewport({bool force = false}) {
+    if (rosChannel == null) return;
+
+    final map = rosChannel!.map_.value;
+    if (map.mapConfig.width <= 0 || map.mapConfig.height <= 0) return;
+    if (!force && _hasFittedMapViewport) return;
+    if (size.x <= 0 || size.y <= 0) return;
+
+    final availableWidth = size.x;
+    final availableHeight = size.y;
+    final zoomX = availableWidth / map.mapConfig.width;
+    final zoomY = availableHeight / map.mapConfig.height;
+    final fitZoom = (math.min(zoomX, zoomY) * 0.9).clamp(minScale, maxScale);
+
+    camera.viewfinder.position = Vector2(
+      map.mapConfig.width / 2,
+      map.mapConfig.height / 2,
+    );
+    camera.viewfinder.zoom = fitZoom;
+    mapScale = fitZoom;
+
+    _hasFittedMapViewport = true;
+  }
+
+  void _updateGridBounds() {
+    if (!isLoaded || rosChannel == null) return;
+
+    final map = rosChannel!.map_.value;
+    final gridWidth = math.max(size.x, map.mapConfig.width.toDouble());
+    final gridHeight = math.max(size.y, map.mapConfig.height.toDouble());
+    _displayGrid
+      ..size = Vector2(gridWidth, gridHeight)
+      ..position = Vector2.zero();
   }
   
   // 处理单击事件
@@ -692,6 +750,7 @@ class MapEditFlame extends FlameGame {
     final focalPointDelta = position - _lastFocalPoint!;
     camera.viewfinder.position -= focalPointDelta / camera.viewfinder.zoom;
     _lastFocalPoint = position;
+    _hasFittedMapViewport = true;
     return true;
   }
   
@@ -718,6 +777,7 @@ class MapEditFlame extends FlameGame {
     final newScreenPoint = camera.localToGlobal(worldPoint);
     final offset = position - newScreenPoint;
     camera.viewfinder.position -= offset / camera.viewfinder.zoom;
+    _hasFittedMapViewport = true;
     
     return true;
   }
@@ -892,7 +952,13 @@ class MapEditFlame extends FlameGame {
     
     print('拓扑图层已更新，显示 ${wayPoints.length} 个导航点');
   }
+
+  @override
+  void onRemove() {
+    if (rosChannel != null) {
+      rosChannel!.map_.removeListener(_handleMapChanged);
+    }
+    super.onRemove();
+  }
 }
-
-
 

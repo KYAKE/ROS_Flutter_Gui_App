@@ -138,7 +138,8 @@ ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 
 2. 运行应用并配置连接参数
 
-详细使用说明参见：[使用说明](docs/usage.md) 
+详细使用说明参见：[使用说明](docs/usage.md)  
+Ubuntu 24.04 环境准备参见：[Ubuntu 24.04 环境准备指南](docs/ubuntu24_setup.md)
 
 ## Star History
 

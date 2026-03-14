@@ -47,13 +47,19 @@ class MapComponent extends SpriteComponent {
   Future<void> onLoad() async {
     await super.onLoad();
     
-    // 创建一个占位的透明 sprite，避免 SpriteComponent 断言失败
-    final placeholderImage = await _createPlaceholderImage();
-    sprite = Sprite(placeholderImage);
+    // Only use a placeholder before the first real map image is built.
+    if (sprite == null) {
+      final placeholderImage = await _createPlaceholderImage();
+      sprite = Sprite(placeholderImage);
+    }
     
     // 如果有RosChannel，立即设置监听器
     if (_rosChannel != null) {
       _setupMapListener();
+    }
+
+    if (_currentMap != null) {
+      await _processMapToSprite(_currentMap!);
     }
   }
   
@@ -89,7 +95,7 @@ class MapComponent extends SpriteComponent {
   }
   
   void updateMapData(OccupancyMap map) async {
-    if (_currentMap == map) return;
+    if (_currentMap == map && sprite != null) return;
     
     _currentMap = map;
     await _processMapToSprite(map);
@@ -259,7 +265,9 @@ class MapComponent extends SpriteComponent {
       
       sprite = Sprite(image);
       size = Vector2(width.toDouble(), height.toDouble());
-      position = Vector2(map.mapConfig.originX, map.mapConfig.originY);
+      // The Flame world uses occupancy-grid indices as coordinates.
+      // Keeping the map at the origin keeps all overlays aligned.
+      position = Vector2.zero();
       
     } catch (e) {
       print('Error processing map in Flame: $e');
