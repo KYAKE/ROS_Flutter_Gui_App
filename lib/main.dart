@@ -20,20 +20,20 @@ import 'package:oktoast/oktoast.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // 设置全局错误处理
   FlutterError.onError = (FlutterErrorDetails details) {
     print('Flutter Error: ${details.exception}');
     print('Stack trace: ${details.stack}');
   };
-  
+
   // 捕获未处理的异步异常
   PlatformDispatcher.instance.onError = (error, stack) {
     print('Unhandled async error: $error');
     print('Stack trace: $stack');
     return true; // 防止程序崩溃
   };
-  
+
   await _setInitialOrientation();
   runApp(MultiProvider(providers: [
     Provider<RosChannel>(create: (_) => RosChannel()),
@@ -44,8 +44,12 @@ void main() async {
 
 Future<void> _setInitialOrientation() async {
   final prefs = await SharedPreferences.getInstance();
-  final orientationValue = prefs.getString('screenOrientation') ?? 'landscape';
-  if (orientationValue == 'portrait') {
+  final orientationValue = prefs.getString('screenOrientation');
+  final initialOrientation = orientationValue ?? 'portrait';
+  if (orientationValue == null) {
+    await prefs.setString('screenOrientation', 'portrait');
+  }
+  if (initialOrientation == 'portrait') {
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -64,7 +68,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  Locale _locale = Locale('en'); // 默认语言
+  Locale _locale = Locale('zh'); // 默认语言
 
   @override
   void initState() {
@@ -83,9 +87,13 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _loadLocale() async {
     final prefs = await SharedPreferences.getInstance();
-    final languageCode = prefs.getString('language') ?? 'en';
+    final languageCode = prefs.getString('language');
+    final initialLanguageCode = languageCode ?? 'zh';
+    if (languageCode == null) {
+      await prefs.setString('language', 'zh');
+    }
     setState(() {
-      _locale = Locale(languageCode);
+      _locale = Locale(initialLanguageCode);
     });
   }
 
@@ -97,94 +105,94 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return OKToast(
       child: MaterialApp(
-      title: 'Ros Flutter GUI App',
-      debugShowCheckedModeBanner: false,
-      locale: _locale, // 设置应用的语言
-      localizationsDelegates: [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: [
-        Locale('en'), // English
-        Locale('zh'), // Chinese
-      ],
-      initialRoute: "/connect",
-      routes: {
-        "/connect": ((context) => ConnectPage()),
-        "/map": ((context) => MainFlamePage()),
-        "/setting": ((context) => SettingsPage()),
-        // "/gamepad":((context) => GamepadPage()),
-      },
-      themeMode: Provider.of<ThemeProvider>(context, listen: true).themeMode,
-      theme: ThemeData(
-        brightness: Brightness.light,
-        colorScheme: ColorScheme.fromSwatch().copyWith(
-          primary: Colors.blue,
-          secondary: Colors.blue[50],
-          background: Color.fromRGBO(240, 240, 240, 1),
-          surface: Color.fromARGB(153, 224, 224, 224),
-        ),
-        inputDecorationTheme: const InputDecorationTheme(
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: Colors.grey),
+        title: 'Ros Flutter GUI App',
+        debugShowCheckedModeBanner: false,
+        locale: _locale, // 设置应用的语言
+        localizationsDelegates: [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [
+          Locale('en'), // English
+          Locale('zh'), // Chinese
+        ],
+        initialRoute: "/connect",
+        routes: {
+          "/connect": ((context) => ConnectPage()),
+          "/map": ((context) => MainFlamePage()),
+          "/setting": ((context) => SettingsPage()),
+          // "/gamepad":((context) => GamepadPage()),
+        },
+        themeMode: Provider.of<ThemeProvider>(context, listen: true).themeMode,
+        theme: ThemeData(
+          brightness: Brightness.light,
+          colorScheme: ColorScheme.fromSwatch().copyWith(
+            primary: Colors.blue,
+            secondary: Colors.blue[50],
+            background: Color.fromRGBO(240, 240, 240, 1),
+            surface: Color.fromARGB(153, 224, 224, 224),
           ),
-          focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: Colors.blue, width: 2.0),
+          inputDecorationTheme: const InputDecorationTheme(
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.blue, width: 2.0),
+            ),
           ),
-        ),
-        iconTheme: IconThemeData(
-          color: Colors.black, // 设置全局图标颜色为绿色
-        ),
-        cardColor: Color.fromRGBO(230, 230, 230, 1),
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: AppBarTheme(elevation: 0),
-        chipTheme: ThemeData.light().chipTheme.copyWith(
-              backgroundColor: Colors.white,
-              elevation: 10.0,
-              shape: StadiumBorder(
-                side: BorderSide(
-                  color: Colors.grey[300]!, // 设置边框颜色
-                  width: 1.0, // 设置边框宽度
+          iconTheme: IconThemeData(
+            color: Colors.black, // 设置全局图标颜色为绿色
+          ),
+          cardColor: Color.fromRGBO(230, 230, 230, 1),
+          scaffoldBackgroundColor: Colors.white,
+          appBarTheme: AppBarTheme(elevation: 0),
+          chipTheme: ThemeData.light().chipTheme.copyWith(
+                backgroundColor: Colors.white,
+                elevation: 10.0,
+                shape: StadiumBorder(
+                  side: BorderSide(
+                    color: Colors.grey[300]!, // 设置边框颜色
+                    width: 1.0, // 设置边框宽度
+                  ),
                 ),
               ),
+        ),
+        darkTheme: ThemeData(
+          brightness: Brightness.dark,
+          colorScheme:
+              ColorScheme.fromSwatch(brightness: Brightness.dark).copyWith(
+            primary: Colors.blue,
+            secondary: Colors.blueGrey,
+            surface: Color.fromRGBO(60, 60, 60, 1),
+          ),
+          inputDecorationTheme: const InputDecorationTheme(
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey),
             ),
-      ),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        colorScheme:
-            ColorScheme.fromSwatch(brightness: Brightness.dark).copyWith(
-          primary: Colors.blue,
-          secondary: Colors.blueGrey,
-          surface: Color.fromRGBO(60, 60, 60, 1),
-        ),
-        inputDecorationTheme: const InputDecorationTheme(
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: Colors.grey),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.blue, width: 2.0),
+            ),
           ),
-          focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(color: Colors.blue, width: 2.0),
+          cardColor: Color.fromRGBO(230, 230, 230, 1),
+          scaffoldBackgroundColor: Color.fromRGBO(40, 40, 40, 1),
+          appBarTheme: AppBarTheme(elevation: 0),
+          iconTheme: IconThemeData(
+            color: Colors.white, // 设置全局图标颜色为绿色
           ),
-        ),
-        cardColor: Color.fromRGBO(230, 230, 230, 1),
-        scaffoldBackgroundColor: Color.fromRGBO(40, 40, 40, 1),
-        appBarTheme: AppBarTheme(elevation: 0),
-        iconTheme: IconThemeData(
-          color: Colors.white, // 设置全局图标颜色为绿色
-        ),
-        chipTheme: ThemeData.dark().chipTheme.copyWith(
-              backgroundColor: Color.fromRGBO(60, 60, 60, 1),
-              elevation: 10.0,
-              shape: StadiumBorder(
-                side: BorderSide(
-                  color: Colors.white, // 设置边框颜色
-                  width: 1.0, // 设置边框宽度
+          chipTheme: ThemeData.dark().chipTheme.copyWith(
+                backgroundColor: Color.fromRGBO(60, 60, 60, 1),
+                elevation: 10.0,
+                shape: StadiumBorder(
+                  side: BorderSide(
+                    color: Colors.white, // 设置边框颜色
+                    width: 1.0, // 设置边框宽度
+                  ),
                 ),
               ),
-            ),
-      ),
-      home: ConnectPage(),
+        ),
+        home: ConnectPage(),
       ),
     );
   }
