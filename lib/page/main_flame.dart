@@ -18,7 +18,6 @@ import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:vector_math/vector_math_64.dart' as vm;
 import 'package:ros_flutter_gui_app/provider/map_manager.dart';
-import 'dart:math' as math;
 
 class MainFlame extends FlameGame {
   late MapComponent _displayMap;
@@ -67,9 +66,6 @@ class MainFlame extends FlameGame {
   // 手势相关变量
   double _baseScale = 1.0;
   Vector2? _lastFocalPoint;
-  bool _hasFittedMapViewport = false;
-  bool _usedRobotFallbackViewport = false;
-  Vector2? _lastFittedMapSize;
 
   bool isRelocMode = false;
   RobotPose relocRobotPose = RobotPose(0, 0, 0);
@@ -214,7 +210,6 @@ class MainFlame extends FlameGame {
       if (isRelocMode) return;
       _displayRobot.updatePose(rosChannel!.robotPoseMap.value);
       relocRobotPose = rosChannel!.robotPoseMap.value;
-      _focusRobotFallbackView();
     });
 
     // 监听机器人轮廓数据
@@ -279,7 +274,9 @@ class MainFlame extends FlameGame {
     });
 
     // 监听地图数据
-    rosChannel!.map_.addListener(_handleMapChanged);
+    rosChannel!.map_.addListener(() {
+      _displayMap.updateMapData(rosChannel!.map_.value);
+    });
 
     // 监听拓扑地图数据
     rosChannel!.topologyMap_.addListener(() {
@@ -287,91 +284,12 @@ class MainFlame extends FlameGame {
     });
 
     // 立即更新地图数据
-    _handleMapChanged();
+    _displayMap.updateMapData(rosChannel!.map_.value);
 
     _loadOfflineNavPoints();
 
     // 立即更新拓扑图层数据
     _updateTopologyLayers();
-  }
-
-  @override
-  void onGameResize(Vector2 size) {
-    super.onGameResize(size);
-    if (!isLoaded) return;
-    _updateGridBounds();
-    final map = rosChannel!.map_.value;
-    if (map.mapConfig.width > 0 && map.mapConfig.height > 0) {
-      _fitMapToViewport();
-    } else {
-      _focusRobotFallbackView();
-    }
-  }
-
-  void _handleMapChanged() {
-    final map = rosChannel!.map_.value;
-    _displayMap.updateMapData(map);
-    _updateGridBounds();
-
-    if (map.mapConfig.width > 0 && map.mapConfig.height > 0) {
-      final mapSize = Vector2(
-        map.mapConfig.width.toDouble(),
-        map.mapConfig.height.toDouble(),
-      );
-      final shouldRefit = !_hasFittedMapViewport ||
-          _usedRobotFallbackViewport ||
-          _lastFittedMapSize == null ||
-          _lastFittedMapSize != mapSize;
-
-      if (shouldRefit) {
-        _fitMapToViewport();
-      }
-      return;
-    }
-
-    _focusRobotFallbackView();
-  }
-
-  void _updateGridBounds() {
-    final map = rosChannel!.map_.value;
-    final gridWidth = math.max(size.x, map.mapConfig.width.toDouble());
-    final gridHeight = math.max(size.y, map.mapConfig.height.toDouble());
-    _displayGrid
-      ..size = Vector2(gridWidth, gridHeight)
-      ..position = Vector2.zero();
-  }
-
-  void _fitMapToViewport() {
-    final map = rosChannel!.map_.value;
-    if (size.x <= 0 || size.y <= 0) return;
-    if (map.mapConfig.width <= 0 || map.mapConfig.height <= 0) return;
-
-    final zoomX = size.x / map.mapConfig.width;
-    final zoomY = size.y / map.mapConfig.height;
-    final fitZoom = (math.min(zoomX, zoomY) * 0.9).clamp(minScale, maxScale);
-
-    camera.viewfinder.position = Vector2(
-      map.mapConfig.width / 2,
-      map.mapConfig.height / 2,
-    );
-    camera.viewfinder.zoom = fitZoom;
-    mapScale = fitZoom;
-    _hasFittedMapViewport = true;
-    _usedRobotFallbackViewport = false;
-    _lastFittedMapSize = Vector2(
-      map.mapConfig.width.toDouble(),
-      map.mapConfig.height.toDouble(),
-    );
-  }
-
-  void _focusRobotFallbackView() {
-    if (_hasFittedMapViewport) return;
-    if (_displayRobot.position.x == 0 && _displayRobot.position.y == 0) return;
-
-    camera.viewfinder.position = _displayRobot.position.clone();
-    camera.viewfinder.zoom = 6.0;
-    mapScale = 6.0;
-    _usedRobotFallbackViewport = true;
   }
 
   // 处理缩放开始
