@@ -119,7 +119,8 @@ class _SettingsPageState extends State<SettingsPage> {
       'imageTopic': AppLocalizations.of(context)!.image_topic,
       'imageWidth': AppLocalizations.of(context)!.image_width,
       'imageHeight': AppLocalizations.of(context)!.image_height,
-      'robotFootprintTopic': AppLocalizations.of(context)!.robot_footprint_topic,
+      'robotFootprintTopic':
+          AppLocalizations.of(context)!.robot_footprint_topic,
       'localCostmapTopic': AppLocalizations.of(context)!.local_cost_map_topic,
       'pointCloud2Topic': AppLocalizations.of(context)!.pointcloud2_topic,
       'globalCostmapTopic': AppLocalizations.of(context)!.global_costmap_topic,
@@ -471,7 +472,8 @@ class _SettingsPageState extends State<SettingsPage> {
         _buildSettingItem('MaxVx', _settings['MaxVx'] ?? '0.1'),
         _buildSettingItem('MaxVy', _settings['MaxVy'] ?? '0.1'),
         _buildSettingItem('MaxVw', _settings['MaxVw'] ?? '0.3'),
-        _buildSettingItem('robotSize', _settings['robotSize']?.toString() ?? '3.0'),
+        _buildSettingItem(
+            'robotSize', _settings['robotSize']?.toString() ?? '3.0'),
         _buildSettingItem('mapFrameName', _settings['mapFrameName'] ?? 'map'),
         _buildSettingItem(
             'baseLinkFrameName', _settings['baseLinkFrameName'] ?? 'base_link'),
@@ -494,14 +496,14 @@ class _SettingsPageState extends State<SettingsPage> {
             'globalPathTopic', _settings['globalPathTopic'] ?? '/plan'),
         _buildSettingItem(
             'localPathTopic', _settings['localPathTopic'] ?? '/local_plan'),
-        _buildSettingItem(
-            'tracePathTopic', _settings['tracePathTopic'] ?? '/transformed_global_plan'),
+        _buildSettingItem('tracePathTopic',
+            _settings['tracePathTopic'] ?? '/transformed_global_plan'),
         _buildSettingItem(
             'relocTopic', _settings['relocTopic'] ?? '/initialpose'),
         _buildSettingItem(
             'navGoalTopic', _settings['navGoalTopic'] ?? '/goal_pose'),
         _buildSettingItem(
-            'OdometryTopic', _settings['OdometryTopic'] ?? '/wheel/odometry'),
+            'OdometryTopic', _settings['OdometryTopic'] ?? '/odom'),
         _buildSettingItem(
             'SpeedCtrlTopic', _settings['SpeedCtrlTopic'] ?? '/cmd_vel'),
         _buildSettingItem(
@@ -509,13 +511,15 @@ class _SettingsPageState extends State<SettingsPage> {
         _buildSettingItem(
             'imageTopic', _settings['imageTopic'] ?? '/camera/image_raw'),
         _buildSettingItem(
-            'robotFootprintTopic', _settings['robotFootprintTopic'] ?? '/local_costmap/published_footprint'),
-        _buildSettingItem(
-            'localCostmapTopic', _settings['localCostmapTopic'] ?? '/local_costmap/costmap'),
-        _buildSettingItem(
-            'globalCostmapTopic', _settings['globalCostmapTopic'] ?? '/global_costmap/costmap'),
-        _buildSettingItem(
-            'pointCloud2Topic', _settings['pointCloud2Topic'] ?? '/pointcloud2'),
+            'robotFootprintTopic',
+            _settings['robotFootprintTopic'] ??
+                '/local_costmap/published_footprint'),
+        _buildSettingItem('localCostmapTopic',
+            _settings['localCostmapTopic'] ?? '/local_costmap/costmap'),
+        _buildSettingItem('globalCostmapTopic',
+            _settings['globalCostmapTopic'] ?? '/global_costmap/costmap'),
+        _buildSettingItem('pointCloud2Topic',
+            _settings['pointCloud2Topic'] ?? '/pointcloud2'),
       ],
     );
   }

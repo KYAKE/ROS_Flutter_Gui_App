@@ -230,13 +230,14 @@ class Setting {
     prefs.setString('pointCloud2Topic', "/sensors/lidar_0/points");
     prefs.setString('globalPathTopic', "/plan");
     prefs.setString('localPathTopic', "/plan");
-        prefs.setString('tracePathTopic', "/transformed_global_plan");
+    prefs.setString('tracePathTopic', "/transformed_global_plan");
     prefs.setString('relocTopic', "/initialpose");
     prefs.setString('navGoalTopic', "/goal_pose");
     prefs.setString('OdometryTopic', "/platform/odom/filtered");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
+    prefs.setString(
+        'robotFootprintTopic', "/local_costmap/published_footprint");
     prefs.setString('localCostmapTopic', "/local_costmap/costmap");
     prefs.setString('globalCostmapTopic', "/global_costmap/costmap");
     prefs.setString('MaxVx', "0.9");
@@ -265,7 +266,8 @@ class Setting {
     prefs.setString('OdometryTopic', "/odom");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
+    prefs.setString(
+        'robotFootprintTopic', "/local_costmap/published_footprint");
     prefs.setString('localCostmapTopic', "/local_costmap/costmap");
     prefs.setString('globalCostmapTopic', "/global_costmap/costmap");
     prefs.setString('MaxVx', "0.9");
@@ -288,13 +290,14 @@ class Setting {
     prefs.setString('pointCloud2Topic', "points");
     prefs.setString('globalPathTopic', "/plan");
     prefs.setString('localPathTopic', "/local_plan");
-    
+
     prefs.setString('relocTopic', "/initialpose");
     prefs.setString('navGoalTopic', "/goal_pose");
     prefs.setString('OdometryTopic', "/odom");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
+    prefs.setString(
+        'robotFootprintTopic', "/local_costmap/published_footprint");
     prefs.setString('localCostmapTopic', "/local_costmap/costmap");
     prefs.setString('globalCostmapTopic', "/global_costmap/costmap");
     prefs.setString('MaxVx', "0.9");
@@ -322,7 +325,8 @@ class Setting {
     prefs.setString('OdometryTopic', "/wheel/odometry");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
+    prefs.setString(
+        'robotFootprintTopic', "/local_costmap/published_footprint");
     prefs.setString('localCostmapTopic', "/local_costmap/costmap");
     prefs.setString('globalCostmapTopic', "/global_costmap/costmap");
     prefs.setString('MaxVx', "0.9");
@@ -350,7 +354,8 @@ class Setting {
     prefs.setString('OdometryTopic', "/odom");
     prefs.setString('SpeedCtrlTopic', "/cmd_vel");
     prefs.setString('BatteryTopic', "/battery_status");
-    prefs.setString('robotFootprintTopic', "/local_costmap/published_footprint");
+    prefs.setString(
+        'robotFootprintTopic', "/local_costmap/published_footprint");
     prefs.setString('localCostmapTopic', "/local_costmap/costmap");
     prefs.setString('globalCostmapTopic', "/global_costmap/costmap");
     prefs.setString('MaxVx', "0.9");
@@ -394,7 +399,8 @@ class Setting {
   }
 
   String get robotFootprintTopic {
-    return prefs.getString("robotFootprintTopic") ?? "/local_costmap/published_footprint";
+    return prefs.getString("robotFootprintTopic") ??
+        "/local_costmap/published_footprint";
   }
 
   void setRobotFootprintTopic(String topic) {
@@ -403,7 +409,7 @@ class Setting {
 
   String get localCostmapTopic {
     return prefs.getString("localCostmapTopic") ?? "/local_costmap/costmap";
-  } 
+  }
 
   void setLocalCostmapTopic(String topic) {
     prefs.setString('localCostmapTopic', topic);
@@ -458,7 +464,8 @@ class Setting {
   String get globalPathTopic {
     return prefs.getString("globalPathTopic") ?? "plan";
   }
-    String get tracePathTopic {
+
+  String get tracePathTopic {
     return prefs.getString("tracePathTopic") ?? "/transformed_global_plan";
   }
 
@@ -515,7 +522,7 @@ class Setting {
   }
 
   String get odomTopic {
-    return prefs.getString("OdometryTopic") ?? "/wheel/odometry";
+    return prefs.getString("OdometryTopic") ?? "/odom";
   }
 
   void setOdomTopic(String topic) {
@@ -641,9 +648,11 @@ class Setting {
   void setGlobalPathTopic(String topic) {
     prefs.setString('globalPathTopic', topic);
   }
+
   void setTracePathTopic(String topic) {
     prefs.setString('tracePathTopic', topic);
   }
+
   // 状态监控相关方法
   void setRobotStatusTopic(String topic) {
     prefs.setString('robotStatusTopic', topic);
@@ -652,57 +661,56 @@ class Setting {
   void setJointStatesTopic(String topic) {
     prefs.setString('jointStatesTopic', topic);
   }
-  
+
   // 图层开关配置相关方法
   void setShowGlobalCostmap(bool show) {
     prefs.setBool('showGlobalCostmap', show);
   }
-  
+
   bool get showGlobalCostmap {
     return prefs.getBool('showGlobalCostmap') ?? false;
   }
-  
+
   void setShowLocalCostmap(bool show) {
     prefs.setBool('showLocalCostmap', show);
   }
-  
+
   bool get showLocalCostmap {
     return prefs.getBool('showLocalCostmap') ?? true;
   }
-  
+
   void setShowLaser(bool show) {
     prefs.setBool('showLaser', show);
   }
-  
+
   bool get showLaser {
     return prefs.getBool('showLaser') ?? true;
   }
-  
+
   void setShowPointCloud(bool show) {
     prefs.setBool('showPointCloud', show);
   }
-  
+
   bool get showPointCloud {
     return prefs.getBool('showPointCloud') ?? false;
   }
-  
+
   void setShowTopologyPath(bool show) {
     prefs.setBool('showTopologyPath', show);
   }
-  
+
   bool get showTopologyPath {
     return prefs.getBool('showTopologyPath') ?? true;
   }
-  
+
   // 机器人尺寸相关方法
   void setRobotSize(double size) {
     prefs.setDouble('robotSize', size);
   }
-  
+
   double get robotSize {
     return prefs.getDouble('robotSize') ?? 8.0;
   }
-  
 }
 
 Setting globalSetting = Setting();
