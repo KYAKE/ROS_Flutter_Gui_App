@@ -189,17 +189,11 @@ class _MainFlamePageState extends State<MainFlamePage> {
                   if (!updated) {
                     return;
                   }
-
-                  final relocPose = game.getRelocRobotPose();
-                  Provider.of<RosChannel>(context, listen: false)
-                      .sendRelocPose(relocPose);
-                  globalState.mode.value = Mode.normal;
-                  game.setRelocMode(false);
                   toastification.show(
                     context: context,
                     title: Text(
-                        '重定位已发送 (${relocPose.x.toStringAsFixed(2)}, ${relocPose.y.toStringAsFixed(2)})'),
-                    autoCloseDuration: const Duration(seconds: 2),
+                        '已选择重定位点 (${game.getRelocRobotPose().x.toStringAsFixed(2)}, ${game.getRelocRobotPose().y.toStringAsFixed(2)})'),
+                    autoCloseDuration: const Duration(seconds: 1),
                   );
                   setState(() {});
                   return;
@@ -534,6 +528,35 @@ class _MainFlamePageState extends State<MainFlamePage> {
                             : theme.iconTheme.color,
                       ),
                     ),
+                    if (Provider.of<GlobalState>(context, listen: false)
+                            .mode
+                            .value ==
+                        Mode.reloc) ...[
+                      IconButton(
+                        onPressed: () {
+                          final relocPose = game.getRelocRobotPose();
+                          Provider.of<RosChannel>(context, listen: false)
+                              .sendRelocPose(relocPose);
+                          toastification.show(
+                            context: context,
+                            title: Text(
+                                '重定位已发送 (${relocPose.x.toStringAsFixed(2)}, ${relocPose.y.toStringAsFixed(2)})'),
+                            autoCloseDuration: const Duration(seconds: 2),
+                          );
+                        },
+                        icon: const Icon(Icons.check, color: Colors.green),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          Provider.of<GlobalState>(context, listen: false)
+                              .mode
+                              .value = Mode.normal;
+                          game.setRelocMode(false);
+                          setState(() {});
+                        },
+                        icon: const Icon(Icons.close, color: Colors.red),
+                      ),
+                    ],
                   ],
                 ),
               ),
