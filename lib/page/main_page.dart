@@ -15,6 +15,7 @@ import 'package:ros_flutter_gui_app/provider/them_provider.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:toastification/toastification.dart';
 import 'package:flutter_mjpeg/flutter_mjpeg.dart';
+import 'package:flutter_joystick/flutter_joystick.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/page/gamepad_widget.dart';
 import 'package:ros_flutter_gui_app/basic/diagnostic_status.dart';
@@ -180,7 +181,31 @@ class _MainFlamePageState extends State<MainFlamePage> {
                 game.onScaleEnd();
               },
               onTapDown: (details) {
-                // 处理点击事件，检测waypoint
+                final globalState =
+                    Provider.of<GlobalState>(context, listen: false);
+                if (globalState.mode.value == Mode.reloc) {
+                  final updated =
+                      game.updateRelocPoseByTap(details.localPosition);
+                  if (!updated) {
+                    return;
+                  }
+
+                  final relocPose = game.getRelocRobotPose();
+                  Provider.of<RosChannel>(context, listen: false)
+                      .sendRelocPose(relocPose);
+                  globalState.mode.value = Mode.normal;
+                  game.setRelocMode(false);
+                  toastification.show(
+                    context: context,
+                    title: Text(
+                        '重定位已发送 (${relocPose.x.toStringAsFixed(2)}, ${relocPose.y.toStringAsFixed(2)})'),
+                    autoCloseDuration: const Duration(seconds: 2),
+                  );
+                  setState(() {});
+                  return;
+                }
+
+                // 普通模式下处理点击事件，检测waypoint
                 game.onTap(details.localPosition);
               },
               child: GameWidget(game: game),
@@ -191,6 +216,7 @@ class _MainFlamePageState extends State<MainFlamePage> {
           _buildRightToolbar(context, theme),
           _buildBottomControls(context, theme),
           _buildCameraWidget(context, theme),
+          _buildRelocDirectionJoystick(context, theme),
           _buildGamepadWidget(context, theme),
           _buildMapLegend(context, theme),
         ],
@@ -481,10 +507,21 @@ class _MainFlamePageState extends State<MainFlamePage> {
                             Provider.of<GlobalState>(context, listen: false);
                         if (globalState.mode.value == Mode.reloc) {
                           globalState.mode.value = Mode.normal;
+                          game.setRelocMode(false);
                         } else {
                           globalState.mode.value = Mode.reloc;
+                          game.setRelocMode(true);
+                          final currentPose =
+                              Provider.of<RosChannel>(context, listen: false)
+                                  .robotPoseMap
+                                  .value;
+                          game.setRelocDirection(currentPose.theta);
+                          toastification.show(
+                            context: context,
+                            title: const Text('重定位模式：点击地图发送位置，右下摇杆调整朝向'),
+                            autoCloseDuration: const Duration(seconds: 3),
+                          );
                         }
-                        game.setRelocMode(globalState.mode.value == Mode.reloc);
                         setState(() {});
                       },
                       icon: Icon(
@@ -497,35 +534,6 @@ class _MainFlamePageState extends State<MainFlamePage> {
                             : theme.iconTheme.color,
                       ),
                     ),
-                    if (Provider.of<GlobalState>(context, listen: false)
-                            .mode
-                            .value ==
-                        Mode.reloc) ...[
-                      IconButton(
-                        onPressed: () {
-                          // 确认重定位逻辑
-                          Provider.of<GlobalState>(context, listen: false)
-                              .mode
-                              .value = Mode.normal;
-                          game.setRelocMode(false);
-                          Provider.of<RosChannel>(context, listen: false)
-                              .sendRelocPose(game.getRelocRobotPose());
-                          setState(() {});
-                        },
-                        icon: Icon(Icons.check, color: Colors.green),
-                      ),
-                      IconButton(
-                        onPressed: () {
-                          // 取消重定位逻辑
-                          Provider.of<GlobalState>(context, listen: false)
-                              .mode
-                              .value = Mode.normal;
-                          game.setRelocMode(false);
-                          setState(() {});
-                        },
-                        icon: Icon(Icons.close, color: Colors.red),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -1243,6 +1251,58 @@ class _MainFlamePageState extends State<MainFlamePage> {
       child: Container(
         height: isPortrait ? 120 : 150,
         child: GamepadWidget(),
+      ),
+    );
+  }
+
+  Widget _buildRelocDirectionJoystick(BuildContext context, ThemeData theme) {
+    final currentMode =
+        Provider.of<GlobalState>(context, listen: true).mode.value;
+    if (currentMode != Mode.reloc) {
+      return const SizedBox.shrink();
+    }
+
+    final isPortrait = _isPortrait(context);
+    final joystickSize = isPortrait ? 108.0 : 120.0;
+    final joystickBottom = isPortrait ? 64.0 : 16.0;
+    final cardPadding = isPortrait ? 10.0 : 12.0;
+
+    return Positioned(
+      right: 12,
+      bottom: joystickBottom,
+      child: Card(
+        elevation: 10,
+        child: Padding(
+          padding: EdgeInsets.all(cardPadding),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '朝向',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: joystickSize,
+                height: joystickSize,
+                child: Joystick(
+                  mode: JoystickMode.all,
+                  includeInitialAnimation: false,
+                  listener: (details) {
+                    if (details.x.abs() < 0.15 && details.y.abs() < 0.15) {
+                      return;
+                    }
+                    final theta = -math.atan2(details.y, details.x);
+                    game.setRelocDirection(theta);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -185,11 +185,53 @@ class MainFlame extends FlameGame {
   void setRelocMode(bool isReloc) {
     _displayRobot.setEditMode(isReloc);
     isRelocMode = isReloc;
+    if (isReloc && rosChannel != null) {
+      relocRobotPose = rosChannel!.robotPoseMap.value;
+      _displayRobot.updatePose(relocRobotPose);
+    }
     if (!isReloc) {
       camera
         ..viewfinder
         ..stop();
     }
+  }
+
+  double _normalizeAngle(double angle) {
+    return math.atan2(math.sin(angle), math.cos(angle));
+  }
+
+  void setRelocDirection(double theta) {
+    final normalizedTheta = _normalizeAngle(theta);
+    relocRobotPose = RobotPose(
+      relocRobotPose.x,
+      relocRobotPose.y,
+      normalizedTheta,
+    );
+    _displayRobot.updatePose(relocRobotPose);
+  }
+
+  bool updateRelocPoseByTap(Offset position) {
+    if (!isRelocMode || rosChannel == null) return false;
+
+    final map = rosChannel!.map_.value;
+    if (map.mapConfig.width <= 0 || map.mapConfig.height <= 0) return false;
+
+    final worldPoint = camera.globalToLocal(Vector2(position.dx, position.dy));
+    if (worldPoint.x < 0 ||
+        worldPoint.y < 0 ||
+        worldPoint.x > map.mapConfig.width ||
+        worldPoint.y > map.mapConfig.height) {
+      return false;
+    }
+
+    final mapPose = map.idx2xy(vm.Vector2(worldPoint.x, worldPoint.y));
+    relocRobotPose = RobotPose(
+      mapPose.x,
+      mapPose.y,
+      relocRobotPose.theta,
+    );
+    _displayRobot.updatePose(relocRobotPose);
+    return true;
   }
 
   Future<void> _loadOfflineNavPoints() async {
