@@ -247,8 +247,10 @@ class RosChannel {
   Future<Map<String, dynamic>> sendTopologyGoal(String name) =>
       _robotControl.sendTopologyGoal(name);
 
-  Future<void> sendRelocPose(RobotPose pose) =>
-      _robotControl.sendRelocPose(pose);
+  Future<void> sendRelocPose(RobotPose pose) {
+    _tfService.resetSmoothing();
+    return _robotControl.sendRelocPose(pose);
+  }
 
   // ========== Map operations (delegated) ==========
 

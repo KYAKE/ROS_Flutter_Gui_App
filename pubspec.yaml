@@ -60,7 +60,7 @@ dependencies:
   oktoast: ^3.4.0
   cbor: 6.3.5
 
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icon/icon.png"  
