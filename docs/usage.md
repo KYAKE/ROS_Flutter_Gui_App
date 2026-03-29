@@ -71,3 +71,5 @@ ros2 run web_video_server web_video_server
 因为ros2 在所有进程启动时会向/diagnostics发布启动信息，因此APP将进程启动信息统一收集至Node Start History下
 
 软件会对诊断信息作失活判断，如果诊断信息超过5s没发送，会至为失活
+
+ros2 launch nav2_bringup tb3_simulation_launch.py headless:=False use_simulator:=False

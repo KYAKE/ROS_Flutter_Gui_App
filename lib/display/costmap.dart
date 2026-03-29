@@ -51,10 +51,10 @@ class CostMapComponent extends Component {
       final int width = costMap.mapConfig.width;
       final int height = costMap.mapConfig.height;
 
-      List<int> costMapColors = costMap.getCostMapData();
+      Uint8List costMapColors = costMap.getCostMapData();
       
       final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(
-        Uint8List.fromList(costMapColors),
+        costMapColors,
       );
       
       final ui.ImageDescriptor descriptor = ui.ImageDescriptor.raw(

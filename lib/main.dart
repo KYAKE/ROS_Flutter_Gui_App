@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/services.dart';
+import 'package:ros_flutter_gui_app/app/logging/app_logger.dart';
+import 'package:ros_flutter_gui_app/app/services/performance_monitor.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
 import 'package:ros_flutter_gui_app/provider/global_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,18 +23,31 @@ import 'package:oktoast/oktoast.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 设置全局错误处理
+  // Initialize structured logging
+  AppLogger.init();
+
+  // Set up global error handling with structured logging
   FlutterError.onError = (FlutterErrorDetails details) {
-    print('Flutter Error: ${details.exception}');
-    print('Stack trace: ${details.stack}');
+    AppLogger.e(
+      'Flutter framework error',
+      tag: 'FlutterError',
+      error: details.exception,
+      stackTrace: details.stack,
+    );
   };
 
-  // 捕获未处理的异步异常
   PlatformDispatcher.instance.onError = (error, stack) {
-    print('Unhandled async error: $error');
-    print('Stack trace: $stack');
-    return true; // 防止程序崩溃
+    AppLogger.e(
+      'Unhandled async error',
+      tag: 'PlatformError',
+      error: error,
+      stackTrace: stack,
+    );
+    return true;
   };
+
+  // Start performance monitoring
+  PerformanceMonitor().start();
 
   await _setInitialOrientation();
   runApp(MultiProvider(providers: [

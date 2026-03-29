@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:io';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:vector_math/vector_math_64.dart' as vm;
 
 class MapConfig {
@@ -72,30 +73,30 @@ class OccupancyMap {
   //   cost_translation_table_[254] = 100;  // LETHAL obstacle
   //   cost_translation_table_[255] = -1;   // UNKNOWN
 
-  List<int> getCostMapData() {
-    List<int> costMapData = [];
-    
+  /// Returns RGBA pixel data for costmap visualization.
+  /// Uses pre-allocated Uint8List instead of dynamically growing List.
+  Uint8List getCostMapData() {
+    final total = mapConfig.height * mapConfig.width;
+    final costMapData = Uint8List(total * 4); // RGBA
+
+    int offset = 0;
     for (int x = 0; x < mapConfig.height; x++) {
+      final row = data[x];
       for (int y = 0; y < mapConfig.width; y++) {
-        // 计算像素值
-        int pixelValue = data[x][y];
-        //默认透明
-        List<int> colorRgba = [0,0,0,0]; 
-        
-        //内切障碍，机器人内切半径，所能触及的区域，机器人进入此区域，一定会发生碰撞
-        if(pixelValue==99){
-          // colorRgba = [0x80, 0x80, 0x80, 10];// 浅灰色
+        final pixelValue = row[y];
+
+        if (pixelValue == 100) {
+          // Lethal obstacle – grey
+          costMapData[offset] = 0x80;
+          costMapData[offset + 1] = 0x80;
+          costMapData[offset + 2] = 0x80;
+          costMapData[offset + 3] = 255;
         }
-        else if(pixelValue==100){
-          //实际障碍物点 致命障碍
-          colorRgba = [0x80, 0x80, 0x80, 255];// 灰色
-        } 
-        
-        // 将 RGBA 值添加到结果数组
-        costMapData.addAll(colorRgba);
+        // else: default transparent (already 0)
+        offset += 4;
       }
     }
-    
+
     return costMapData;
   }
 

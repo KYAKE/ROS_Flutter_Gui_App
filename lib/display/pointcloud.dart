@@ -8,7 +8,13 @@ import 'package:vector_math/vector_math_64.dart' as vm;
 class PointCloudComponent extends Component {
   List<Point3D> pointList = [];
   OccupancyMap map;
-  List<vm.Vector2> _transformedPoints = [];
+  List<Offset> _cachedOffsets = [];
+
+  // Cache paint to avoid allocation every frame
+  final Paint _paint = Paint()
+    ..color = Colors.orange
+    ..strokeCap = StrokeCap.round
+    ..strokeWidth = 1;
 
   PointCloudComponent({required this.pointList, required this.map});
 
@@ -23,18 +29,23 @@ class PointCloudComponent extends Component {
   }
 
   void _transformPoints() {
-    _transformedPoints.clear();
+    if (map.mapConfig.resolution <= 0 || map.mapConfig.height <= 0) {
+      _cachedOffsets = [];
+      return;
+    }
+    if (pointList.isEmpty) {
+      _cachedOffsets = [];
+      return;
+    }
 
-    if (map.mapConfig.resolution <= 0 || map.mapConfig.height <= 0) return;
-    if (pointList.isEmpty) return;
-
-    for (Point3D point in pointList) {
-      vm.Vector2 mapPoint = map.xy2idx(vm.Vector2(point.x, point.y));
-
+    final offsets = <Offset>[];
+    for (final point in pointList) {
+      final mapPoint = map.xy2idx(vm.Vector2(point.x, point.y));
       if (mapPoint.x.isFinite && mapPoint.y.isFinite) {
-        _transformedPoints.add(vm.Vector2(mapPoint.x, mapPoint.y));
+        offsets.add(Offset(mapPoint.x, mapPoint.y));
       }
     }
+    _cachedOffsets = offsets;
   }
 
   bool get hasLayout => true;
@@ -47,16 +58,7 @@ class PointCloudComponent extends Component {
 
   @override
   void render(Canvas canvas) {
-    if (_transformedPoints.isEmpty) return;
-
-    Paint paint = Paint()
-      ..color = Colors.orange
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = 1;
-
-    List<Offset> offsetPoints =
-        _transformedPoints.map((v) => Offset(v.x, v.y)).toList();
-
-    canvas.drawPoints(PointMode.points, offsetPoints, paint);
+    if (_cachedOffsets.isEmpty) return;
+    canvas.drawPoints(PointMode.points, _cachedOffsets, _paint);
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:ros_flutter_gui_app/app/logging/app_logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -84,7 +85,7 @@ class GlobalState extends ChangeNotifier {
           }
         });
       } catch (e) {
-        print('加载图层设置失败: $e');
+        AppLogger.e('Failed to load layer settings', tag: 'GlobalState', error: e);
       }
     }
   }

@@ -1,9 +1,10 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
+import 'package:ros_flutter_gui_app/app/logging/app_logger.dart';
 import 'package:ros_flutter_gui_app/basic/nav_point.dart';
 import 'package:ros_flutter_gui_app/basic/occupancy_map.dart';
 import 'package:ros_flutter_gui_app/basic/topology_map.dart';
-import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MapManager extends ChangeNotifier {
   static const String _topologyMapKey = 'topology_map';
@@ -120,7 +121,7 @@ class MapManager extends ChangeNotifier {
     topologyMap.value = rosTopologyMap;
     topologyMap.notifyListeners();
     notifyListeners();
-    print('MapManager: 收到ROS拓扑地图，${rosTopologyMap.points.length}个点，${rosTopologyMap.routes.length}条路径');
+    AppLogger.i('Received ROS topology map: ${rosTopologyMap.points.length} points, ${rosTopologyMap.routes.length} routes', tag: 'MapManager');
   }
 
   void updateOccupancyMapFromRos(OccupancyMap rosOccupancyMap) {
@@ -145,7 +146,7 @@ class MapManager extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final json = topologyMap.value.toJson();
     await prefs.setString(_topologyMapKey, jsonEncode(json));
-    print('MapManager: 拓扑地图已保存到本地');
+    AppLogger.i('Topology map saved locally', tag: 'MapManager');
   }
 
   Future<void> loadLocalTopologyMap() async {
@@ -157,9 +158,9 @@ class MapManager extends ChangeNotifier {
         final json = jsonDecode(jsonStr) as Map<String, dynamic>;
         topologyMap.value = TopologyMap.fromJson(json);
         topologyMap.notifyListeners();
-        print('MapManager: 从本地加载拓扑地图，${topologyMap.value.points.length}个点');
+        AppLogger.i('Loaded local topology map: ${topologyMap.value.points.length} points', tag: 'MapManager');
       } catch (e) {
-        print('MapManager: 加载本地拓扑地图失败: $e');
+        AppLogger.e('Failed to load local topology map', tag: 'MapManager', error: e);
         topologyMap.value = TopologyMap(points: []);
       }
     }
@@ -181,7 +182,7 @@ class MapManager extends ChangeNotifier {
     };
     
     await prefs.setString(_occupancyMapKey, jsonEncode(json));
-    print('MapManager: 栅格地图已保存到本地');
+    AppLogger.i('Occupancy map saved locally', tag: 'MapManager');
   }
 
   Future<void> loadLocalOccupancyMap() async {
@@ -203,9 +204,9 @@ class MapManager extends ChangeNotifier {
         
         occupancyMap.value = map;
         occupancyMap.notifyListeners();
-        print('MapManager: 从本地加载栅格地图');
+        AppLogger.i('Loaded local occupancy map', tag: 'MapManager');
       } catch (e) {
-        print('MapManager: 加载本地栅格地图失败: $e');
+        AppLogger.e('Failed to load local occupancy map', tag: 'MapManager', error: e);
       }
     }
   }
@@ -246,7 +247,7 @@ class MapManager extends ChangeNotifier {
       notifyListeners();
       await saveLocalTopologyMap();
     } catch (e) {
-      print('MapManager: 导入拓扑地图失败: $e');
+      AppLogger.e('Failed to import topology map', tag: 'MapManager', error: e);
       throw Exception('导入失败：无效的JSON格式');
     }
   }

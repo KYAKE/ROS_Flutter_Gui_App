@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:ros_flutter_gui_app/app/logging/app_logger.dart';
 import 'package:roslibdart/roslibdart.dart';
 
 class TopicWithSchemaName {
@@ -74,7 +75,7 @@ class RosBridgePlayer {
     ros.statusStream.listen(
       (Status status) {
         if (status == Status.connected) {
-          print("连接到 $url");
+          AppLogger.i('Connected to $url', tag: 'RosBridge');
           if (closed) return;
           presence = PlayerPresence.present;
           _setupPublishers();
@@ -89,7 +90,7 @@ class RosBridgePlayer {
         _emitState();
       },
       onError: (error) {
-        print("ROS连接错误: $error");
+        AppLogger.e('ROS connection error', tag: 'RosBridge', error: error);
         presence = PlayerPresence.reconnecting;
         _emitState();
       },
@@ -98,7 +99,7 @@ class RosBridgePlayer {
     // 尝试连接
     ros.connect().then((error) {
       if (error.isNotEmpty) {
-        print("连接失败: $error");
+        AppLogger.e('Connection failed', tag: 'RosBridge', error: error);
         presence = PlayerPresence.reconnecting;
         _emitState();
       }
@@ -238,7 +239,7 @@ class RosBridgePlayer {
       _resubscribeTopics();
       
     } catch (error) {
-      print("获取topics失败: $error");
+      AppLogger.e('Failed to fetch topics', tag: 'RosBridge', error: error);
     } finally {
       _emitState();
       
@@ -251,7 +252,7 @@ class RosBridgePlayer {
 
   void _subscribeSingleTopic(SubscribePayload subscription) {
     if (ros.status != Status.connected || closed) {
-      print("ROS未连接或已关闭 订阅topic失败: ${subscription.topic}");
+      AppLogger.w('ROS not connected, subscribe failed: ${subscription.topic}', tag: 'RosBridge');
       return;
     }
 
@@ -287,7 +288,7 @@ class RosBridgePlayer {
           subscription.callback!(message);
         }
       } catch (error) {
-        print("解析消息失败 $topicName: $error");
+        AppLogger.e('Message parse failed for $topicName', tag: 'RosBridge', error: error);
       }
     });
     
