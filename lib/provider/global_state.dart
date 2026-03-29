@@ -19,7 +19,7 @@ class GlobalState extends ChangeNotifier {
     'showGrid': ValueNotifier(true),
     'showGlobalCostmap': ValueNotifier(false),
     'showLocalCostmap': ValueNotifier(false),
-    'showLaser': ValueNotifier(false),
+    'showLaser': ValueNotifier(true),
     'showPointCloud': ValueNotifier(false),
     'showGlobalPath': ValueNotifier(true),
     'showLocalPath': ValueNotifier(true),

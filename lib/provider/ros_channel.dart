@@ -155,6 +155,7 @@ class RosChannel {
     _navData.reset();
     _mapData.reset();
     _robotControl.resetCmdVel();
+    _tfService.resetSmoothing();
     _tfService.robotPoseMap.value = RobotPose.zero();
     _tfService.robotPoseScene.value = RobotPose.zero();
     _connectionService.close();

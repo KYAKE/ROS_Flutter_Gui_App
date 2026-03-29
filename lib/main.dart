@@ -120,7 +120,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return OKToast(
       child: MaterialApp(
-        title: 'Ros Flutter GUI App',
+        title: 'AnyROS',
         debugShowCheckedModeBanner: false,
         locale: _locale, // 设置应用的语言
         localizationsDelegates: [

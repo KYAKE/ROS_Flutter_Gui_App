@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:ros_flutter_gui_app/provider/ros_channel.dart';
 import 'package:ros_flutter_gui_app/global/setting.dart';
@@ -183,10 +184,14 @@ class _ConnectPageState extends State<ConnectPage>
                                         color: primaryColor.withOpacity(0.1),
                                         shape: BoxShape.circle,
                                       ),
-                                      child: Icon(
-                                        Icons.smart_toy_rounded,
-                                        size: 56,
-                                        color: primaryColor,
+                                      child: SvgPicture.asset(
+                                        'assets/icons/robot/robot.svg',
+                                        width: 56,
+                                        height: 56,
+                                        colorFilter: ColorFilter.mode(
+                                          primaryColor,
+                                          BlendMode.srcIn,
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(height: 24),
